@@ -5,7 +5,7 @@ In its current form, Artillery can be put into a C program to generate shellcode
 
 ## Example
 
-This may be a more dramatic example, but this is code does work.
+This may be a more dramatic example, but this code does work.
 
 ```c
 /* includes for artillery */
