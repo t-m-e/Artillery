@@ -8,12 +8,18 @@
 
 int Nasm(
     char* code,         /* [in] assembly code */
+    int   bit_mode,     /* [in] 16, 32, or 64-bit mode */
     char* input,        /* [in] input file. If null, use default */
-    char* output,       /* [out] output. Allocated by callee */
-    size_t output_size  /* [in] output size */
+    char* output,       /* [out] output buffer */
+    size_t output_size  /* [in] largest possible buffer size */
 ) {
     if (!Check_nasm()) {
         printf("[-] nasm not found!\n");
+        return 0;
+    }
+
+    if (!(bit_mode == 16 || bit_mode == 32 || bit_mode == 64)) {
+        printf("[-] incorrect nasm bit-mode `%d` found!", bit_mode);
         return 0;
     }
 
@@ -31,7 +37,11 @@ int Nasm(
     }
 
     if (code != NULL) {
-        fwrite("bits 64\n", 1, strlen("bits 64\n"), f);
+        char _bitmode_fmt[] = "bits %d\n";
+        char _bitmode_buf[25] = { 0 };
+        sprintf(_bitmode_buf, _bitmode_fmt, bit_mode);
+        
+        fwrite(_bitmode_buf, 1, strlen(_bitmode_buf), f);
         fwrite(code, 1, strlen(code), f);
     }
     fclose(f);

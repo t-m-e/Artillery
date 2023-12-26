@@ -98,9 +98,5 @@ for item in $TEST; do
     RET="$?"
     echo "=== [/test] [ret: $RET] ================================"
 
-    if [[ ! "$RET" -eq "0" ]]; then
-        gdb ./artillery
-    fi
-
     rm ./test/artillery.o
 done
