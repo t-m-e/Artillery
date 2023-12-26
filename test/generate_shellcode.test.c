@@ -13,6 +13,7 @@ int main() {
     char code[1024] = { 0 };
     int size = Nasm(
         assembly,
+        64,
         NULL,
         code,
         1024

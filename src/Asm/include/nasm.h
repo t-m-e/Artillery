@@ -7,10 +7,11 @@
  * Define initial logic for nasm assembly.
  */
 int Nasm(
-    char* code,         /* [in] assembly code input */
-    char* input,        /* [in] nasm input location */
-    char* output,       /* [out] nasm output location */
-    size_t output_size  /* [in] output size */
+    char* code,         /* [in] assembly code */
+    int   bit_mode,     /* [in] 16, 32, or 64-bit mode */
+    char* input,        /* [in] nasm input path */
+    char* output,       /* [out] nasm output path */
+    size_t output_size  /* [in] largest possible binary size */
 );
 
 #endif
