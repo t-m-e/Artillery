@@ -1,0 +1,106 @@
+#!/usr/bin/bash 
+
+# Build script
+# * build project with different rules and options
+# * build options
+#   b:   
+#       debug
+#       release
+
+# variables
+BUILD_TYPE=''
+COMPILE_COMMAND=''
+
+# constants
+CC="gcc"
+CFLAGS=""  # "-Wall -Werror -Wpedantic"
+SRC="src"
+INCLUDE="-I$(pwd)/src"
+EXE="artillery"
+TEST=""
+
+function help() {
+    echo "usage: ./build [-acdht]"
+    echo "      -a      build and run all tests"
+    echo "      -c      clear build paths"
+    echo "      -d      build a debug build or release build"
+    echo "              -d debug"
+    echo "              -d release"
+    echo "      -h      display this help message"
+    echo "      -t      test name to compile and run"
+    exit 255
+}
+
+# parse options
+while getopts "a:bch:t" opt; do
+    case $opt in
+        a) TEST=`ls test`;;
+        b) BUILD_TYPE="$OPTARG";; 
+        c) rm lib/*;;
+        h) help;; 
+        t) TEST="$OPTARG"
+    esac
+done
+
+# create include paths
+for item in `ls src`; do
+    if [[ ! -d $SRC/$item ]]; then
+        continue
+    fi
+    INCLUDE="$INCLUDE -I$(pwd)/src/$item/include"
+done
+
+# check if there is a valid build type
+if [[ $BUILD_TYPE -eq "debug" ]]; then 
+    COMPILE_COMMAND="$CC -g $CFLAGS "
+elif [[ $BUILD_TYPE -eq "release" ]]; then 
+    COMPILE_COMMAND="$CC -O3 $CFLAGS "
+else 
+    echo "[error] invalid build type \"-b $BUILD_TYPE\". expected: debug, release"
+    exit 255
+fi
+
+# check if ./lib directory exists
+if [[ ! -d ./lib ]]; then 
+    mkdir ./lib
+fi 
+
+# need code which supports compilations of nested directories    
+for item in `ls $SRC`; do
+    if [[ -d "$SRC/$item" ]]; then
+        for subitem in `ls $SRC/$item`; do
+            if [[ -d $SRC/$item/$subitem ]] || [[ $subitem == "README.md" ]]; then
+                continue
+            fi
+            $COMPILE_COMMAND $INCLUDE $SRC/$item/$subitem -c -o ./lib/$subitem.o
+        done
+    else
+        if [[ "$item" == "artillery.h" ]]; then
+           continue
+        fi  
+        $COMPILE_COMMAND $INCLUDE $SRC/$item -c -o ./lib/$item.o
+    fi
+
+    if [[ ! $? -eq 0 ]]; then
+        echo "[error] failed to compile $SRC/$item"
+        exit 255
+    fi 
+done
+
+# compile for each test
+for item in $TEST; do
+    # compile ./lib -> exe
+    $COMPILE_COMMAND -fno-stack-protector -z execstack $INCLUDE ./test/$item -c -o ./test/artillery.o
+    $CC -z execstack ./test/artillery.o ./lib/* -o $EXE
+
+    echo "[test] test/$item"
+    ./artillery
+    RET="$?"
+    echo "=== [/test] [ret: $RET] ================================"
+
+    if [[ ! "$RET" -eq "0" ]]; then
+        gdb ./artillery
+    fi
+
+    rm ./test/artillery.o
+done
